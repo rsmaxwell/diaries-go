@@ -45,15 +45,14 @@ SCRIPT_DIR=$(cd $BASEDIR && pwd)
 PROJECT_DIR=$(dirname $SCRIPT_DIR)
 SOURCE_DIR=${PROJECT_DIR}/src
 BUILD_DIR=${PROJECT_DIR}/build
-TEMPLATES_DIR=${PROJECT_DIR}/templates
 
 
 
 
 
 
-PROJECT=mqtt-rpc-go
-GROUPID=com.rsmaxwell.mqtt.rpc
+PROJECT=diaries-responder-go
+GROUPID=com.rsmaxwell.diaries
 ARTIFACTID=${PROJECT}_${FAMILY}_${ARCHITECTURE}
 PACKAGING=zip
 ZIPFILE=${ARTIFACTID}_${VERSION}.${PACKAGING}
@@ -78,11 +77,11 @@ export FAMILY
 export ARCHITECTURE
 
 
-cd ${TEMPLATES_DIR}
+cd ${SOURCE_DIR}
 
 tags='$FAMILY,$ARCHITECTURE,$PROJECT,$REPOSITORY,$REPOSITORYID,$VERSION,$BUILD_ID,$TIMESTAMP,$GIT_COMMIT,$GIT_BRANCH,$GIT_URL'
 
-find . -type f | while read filename; do
+find . -name BuildInfo.go | while read filename; do
     echo "Writing ${filename}"
     file=${SOURCE_DIR}/${filename}
     dir=${directory ${file}}

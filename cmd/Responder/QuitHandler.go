@@ -13,7 +13,7 @@ type QuitHandler struct {
 }
 
 func (h *QuitHandler) Handle(req request.Request) (*response.Response, bool, error) {
-	slog.Info("QuitHandler")
+	slog.Debug("QuitHandler")
 
 	quit, err := req.GetBoolean("quit")
 	if err != nil {

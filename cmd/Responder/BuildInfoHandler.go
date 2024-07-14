@@ -13,7 +13,7 @@ type BuildInfoHandler struct {
 }
 
 func (h *BuildInfoHandler) Handle(req request.Request) (*response.Response, bool, error) {
-	slog.Info("BuildInfoHandler")
+	slog.Debug("BuildInfoHandler")
 
 	info := buildinfo.NewBuildInfo()
 

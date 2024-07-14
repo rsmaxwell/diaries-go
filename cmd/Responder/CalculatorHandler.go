@@ -14,7 +14,7 @@ type CalculatorHandler struct {
 }
 
 func (h *CalculatorHandler) Handle(req request.Request) (resp *response.Response, quit bool, err error) {
-	slog.Info("CalculatorHandler")
+	slog.Debug("CalculatorHandler")
 
 	operation, err := req.GetString("operation")
 	if err != nil {
