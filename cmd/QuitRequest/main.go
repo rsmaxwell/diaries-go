@@ -9,7 +9,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"log"
 	"log/slog"
@@ -23,12 +22,16 @@ import (
 	"github.com/eclipse/paho.golang/autopaho"
 	"github.com/eclipse/paho.golang/autopaho/extensions/rpc"
 	"github.com/eclipse/paho.golang/paho"
+	"github.com/rsmaxwell/mqtt-rpc-go/internal/config"
 	"github.com/rsmaxwell/mqtt-rpc-go/internal/loggerlevel"
 	"github.com/rsmaxwell/mqtt-rpc-go/internal/request"
 	"github.com/rsmaxwell/mqtt-rpc-go/internal/response"
 )
 
-const qos = 0
+const (
+	qos          = 0
+	requestTopic = "request"
+)
 
 func main() {
 
@@ -37,25 +40,25 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
-	server := flag.String("server", "mqtt://127.0.0.1:1883", "The URL of the MQTT server")
-	rTopic := flag.String("rtopic", "request", "Topic for requests to go to")
-	username := flag.String("username", "", "A username to authenticate to the MQTT server")
-	password := flag.String("password", "", "Password to match username")
-	flag.Parse()
-
-	err := loggerlevel.SetLoggerLevel()
+	config, err := config.Read()
 	if err != nil {
 		slog.Error(err.Error())
 		os.Exit(1)
 	}
 
-	serverUrl, err := url.Parse(*server)
+	err = loggerlevel.SetLoggerLevel()
 	if err != nil {
 		slog.Error(err.Error())
 		os.Exit(1)
 	}
 
-	config := autopaho.ClientConfig{
+	serverUrl, err := url.Parse(config.Mqtt.GetServer())
+	if err != nil {
+		slog.Error(err.Error())
+		os.Exit(1)
+	}
+
+	mqttConfig := autopaho.ClientConfig{
 		ServerUrls:        []*url.URL{serverUrl},
 		KeepAlive:         30,
 		ConnectRetryDelay: 2 * time.Second,
@@ -71,23 +74,23 @@ func main() {
 				}
 			},
 		},
-		ConnectUsername: *username,
-		ConnectPassword: []byte(*password),
+		ConnectUsername: config.Mqtt.Username,
+		ConnectPassword: []byte(config.Mqtt.Password),
 	}
 
-	config.ClientConfig.ClientID = "requester"
+	mqttConfig.ClientConfig.ClientID = "requester"
 
 	initialSubscriptionMade := make(chan struct{}) // Closed when subscription made (otherwise we might send request before subscription in place)
 	var initialSubscriptionOnce sync.Once          // We only want to close the above once!
 
-	config.OnConnectionUp = func(cm *autopaho.ConnectionManager, connAck *paho.Connack) {
+	mqttConfig.OnConnectionUp = func(cm *autopaho.ConnectionManager, connAck *paho.Connack) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(5*time.Second))
 		defer cancel()
 
 		// Subscribe to the responseTopic
 		if _, err := cm.Subscribe(ctx, &paho.Subscribe{
 			Subscriptions: []paho.SubscribeOptions{
-				{Topic: fmt.Sprintf("response/%s", config.ClientID), QoS: qos},
+				{Topic: fmt.Sprintf("response/%s", mqttConfig.ClientID), QoS: qos},
 			},
 		}); err != nil {
 			log.Printf("requestor failed to subscribe (%s). This is likely to mean no messages will be received.", err)
@@ -97,13 +100,13 @@ func main() {
 	}
 
 	router := paho.NewStandardRouter()
-	config.OnPublishReceived = []func(paho.PublishReceived) (bool, error){
+	mqttConfig.OnPublishReceived = []func(paho.PublishReceived) (bool, error){
 		func(p paho.PublishReceived) (bool, error) {
 			router.Route(p.Packet.Packet())
 			return false, nil
 		}}
 
-	cm, err := autopaho.NewConnection(ctx, config)
+	cm, err := autopaho.NewConnection(ctx, mqttConfig)
 	if err != nil {
 		slog.Error(err.Error())
 		os.Exit(1)
@@ -122,7 +125,7 @@ func main() {
 		Conn:             cm,
 		Router:           router,
 		ResponseTopicFmt: "response/%s",
-		ClientID:         config.ClientID,
+		ClientID:         mqttConfig.ClientID,
 	})
 	if err != nil {
 		slog.Error(err.Error())
@@ -139,8 +142,8 @@ func main() {
 	}
 
 	log.Printf("Sending request: %s", j)
-	resp, err := h.Request(ctx, &paho.Publish{
-		Topic:   *rTopic,
+	reply, err := h.Request(ctx, &paho.Publish{
+		Topic:   requestTopic,
 		Payload: []byte(j),
 	})
 	if err != nil {
@@ -148,19 +151,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	// log.Printf("Received response: %s", string(resp.Payload))
-
-	var resp2 response.Response
-	if err := json.NewDecoder(bytes.NewReader(resp.Payload)).Decode(&resp2); err != nil {
-		log.Printf("could not decode response: %v", err)
+	var resp response.Response
+	if err := json.NewDecoder(bytes.NewReader(reply.Payload)).Decode(&resp); err != nil {
+		slog.Error(fmt.Sprintf("could not decode response: %v", err))
 	}
 
 	// Handle the response
-	if resp2.Ok() {
-		log.Printf("Responder is quitting")
+	if resp.Ok() {
+		slog.Info("Responder is quitting")
 	} else {
-		code, _ := resp2.GetCode()
-		message, _ := resp2.GetMessage()
-		log.Printf("error response: code: %d, message: %s", code, message)
+		code, _ := resp.GetCode()
+		message, _ := resp.GetMessage()
+		slog.Error(fmt.Sprintf("error response: code: %d, message: %s", code, message))
 	}
 }

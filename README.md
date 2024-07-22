@@ -36,3 +36,11 @@ The *MQTT* broker used in this app is **Mosquitto** for the broker. Connections 
  - Run CalculatorRequest.bat
  - Run GetpagesRequest.bat
  - Run QuitRequest.bat
+
+
+## Notes
+
+This issue adds a timeout on the rpc request
+
+https://github.com/eclipse/paho.golang/issues/108
+https://github.com/eclipse/paho.golang/pull/260

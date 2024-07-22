@@ -2,6 +2,7 @@ package response
 
 import (
 	"fmt"
+	"log/slog"
 	"math"
 	"net/http"
 
@@ -46,6 +47,22 @@ func (r *Response) GetMessage() (string, error) {
 		return "", err
 	}
 	return s, nil
+}
+
+func BadRequest(message string) *Response {
+	r := make(Response)
+	slog.Info(message)
+	r.PutCode(http.StatusBadRequest)
+	r.PutMessage(message)
+	return &r
+}
+
+func InternalServerError(message string) *Response {
+	r := make(Response)
+	slog.Info(message)
+	r.PutCode(http.StatusInternalServerError)
+	r.PutMessage(message)
+	return &r
 }
 
 func (r *Response) PutBuildInfo(value *buildinfo.BuildInfo) {
