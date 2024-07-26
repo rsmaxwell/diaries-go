@@ -1,4 +1,4 @@
-module github.com/rsmaxwell/mqtt-rpc-go
+module github.com/rsmaxwell/diaries
 
 go 1.22.0
 

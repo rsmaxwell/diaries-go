@@ -24,10 +24,10 @@ import (
 	"github.com/eclipse/paho.golang/autopaho"
 	"github.com/eclipse/paho.golang/autopaho/extensions/rpc"
 	"github.com/eclipse/paho.golang/paho"
-	"github.com/rsmaxwell/mqtt-rpc-go/internal/config"
-	"github.com/rsmaxwell/mqtt-rpc-go/internal/loggerlevel"
-	"github.com/rsmaxwell/mqtt-rpc-go/internal/request"
-	"github.com/rsmaxwell/mqtt-rpc-go/internal/response"
+	"github.com/rsmaxwell/diaries/internal/config"
+	"github.com/rsmaxwell/diaries/internal/loggerlevel"
+	"github.com/rsmaxwell/diaries/internal/request"
+	"github.com/rsmaxwell/diaries/internal/response"
 )
 
 const (

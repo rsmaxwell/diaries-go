@@ -8,7 +8,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -19,10 +18,11 @@ import (
 
 	"github.com/eclipse/paho.golang/autopaho"
 	"github.com/eclipse/paho.golang/paho"
-	"github.com/rsmaxwell/mqtt-rpc-go/internal/config"
-	"github.com/rsmaxwell/mqtt-rpc-go/internal/loggerlevel"
-	"github.com/rsmaxwell/mqtt-rpc-go/internal/request"
-	"github.com/rsmaxwell/mqtt-rpc-go/internal/response"
+	"github.com/rsmaxwell/diaries/internal/config"
+	"github.com/rsmaxwell/diaries/internal/database"
+	"github.com/rsmaxwell/diaries/internal/loggerlevel"
+	"github.com/rsmaxwell/diaries/internal/request"
+	"github.com/rsmaxwell/diaries/internal/response"
 
 	_ "github.com/lib/pq"
 )
@@ -40,26 +40,11 @@ var (
 	requestHandlers = map[string]Handler{
 		"buildinfo":  new(BuildInfoHandler),
 		"calculator": new(CalculatorHandler),
-		"getPages":   new(GetPagesHandler),
-		"quit":       new(QuitHandler),
+
+		"getPages": new(GetPagesHandler),
+		"quit":     new(QuitHandler),
 	}
 )
-
-func ConnectDatabase(dBConfig *config.DBConfig) (*sql.DB, error) {
-
-	driverName := dBConfig.DriverName()
-	connectionString := dBConfig.ConnectionString()
-
-	db, err := sql.Open(driverName, connectionString)
-	if err != nil {
-		slog.Error(err.Error())
-		slog.Error(fmt.Sprintf("driverName: %s", driverName))
-		slog.Error(fmt.Sprintf("connectionString: %s", connectionString))
-		return nil, fmt.Errorf("could not connect to database")
-	}
-
-	return db, err
-}
 
 func main() {
 
@@ -77,7 +62,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	db, err := ConnectDatabase(&config.Db)
+	db, err := database.Connect(&config.Db)
 	if err != nil {
 		slog.Error(err.Error())
 		os.Exit(1)

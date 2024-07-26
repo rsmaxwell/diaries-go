@@ -45,20 +45,26 @@ func (c *DBConfig) DriverName() string {
 	return c.Go.Driver
 }
 
-func (c *DBConfig) ConnectionString() string {
-	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		c.Host, c.Port, c.Username, c.Password, c.Database)
-}
-
-func (c *DBConfig) GetJdbcUrl() string {
-	return fmt.Sprintf("host=%s port=%d user=%s password=%s sslmode=disable",
+func (c *DBConfig) ConnectionString(database string) string {
+	connectionString := fmt.Sprintf("host=%s port=%d user=%s password=%s",
 		c.Host, c.Port, c.Username, c.Password)
+
+	if database != "" {
+		return fmt.Sprintf("%s dbname=%s", connectionString, database)
+	}
+
+	return connectionString
 }
 
-func (c *DBConfig) GetJdbcUrlWithDatabase() string {
-	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		c.Host, c.Port, c.Username, c.Password, c.Database)
-}
+// func (c *DBConfig) GetJdbcUrl() string {
+// 	return fmt.Sprintf("host=%s port=%d user=%s password=%s sslmode=disable",
+// 		c.Host, c.Port, c.Username, c.Password)
+// }
+
+// func (c *DBConfig) GetJdbcUrlWithDatabase() string {
+// 	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+// 		c.Host, c.Port, c.Username, c.Password, c.Database)
+// }
 
 func Read() (*Config, error) {
 	dirname, err := os.UserHomeDir()

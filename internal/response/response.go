@@ -6,7 +6,7 @@ import (
 	"math"
 	"net/http"
 
-	"github.com/rsmaxwell/mqtt-rpc-go/internal/buildinfo"
+	"github.com/rsmaxwell/diaries/internal/buildinfo"
 )
 
 type Response map[string]interface{}

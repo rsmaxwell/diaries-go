@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/rsmaxwell/mqtt-rpc-go/internal/request"
-	"github.com/rsmaxwell/mqtt-rpc-go/internal/response"
+	"github.com/rsmaxwell/diaries/internal/request"
+	"github.com/rsmaxwell/diaries/internal/response"
 )
 
 type CalculatorHandler struct {
